@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 LIMIT = 50
 URL = f"https://hk.indeed.com/jobs?q=python&l=Hong%20Kong&from=searchOnHP&vjk=5a7eb95658b08892&limit={LIMIT}"
 
-def extract_indeed_pages():
+def get_last_page():
     result = requests.get(URL)
     soup = BeautifulSoup(result.text, 'html.parser')
 
@@ -25,15 +25,31 @@ def extract_indeed_pages():
 
     return max_page
 
-def extract_indeed_jobs(last_page):
-    jobs = []
+def extract_job(html):
+    title = html.find("h2", {"class":"jobTitle"}).find("span", title=True).string
+    company = html.find("span", {"class":"companyName"})
+    if company is not None:
+        company = company.string
+    else:
+        company = None
 
+    location = html.find("div", {"class":"companyLocation"}).string
+    job_id = html.find("h2", {"class":"jobTitle"}).find("a")["data-jk"]
+    return {"title":title, "company":company, "location":location, "link":f"https://hk.indeed.com/viewjob?jk={job_id}&q=python&l=Hong+Kong"}
+
+def extract_jobs(last_page):
+    jobs = []
     for page in range(last_page):
+        print(f"Scrapping page {page}")
         result = requests.get(f"{URL}&start={page*LIMIT}")
         soup = BeautifulSoup(result.text, 'html.parser')
         results = soup.find_all("div", {"class":"cardOutline"})
         for result in results:
-            title = result.find("h2", {"class":"jobTitle"}).find("span", title=True).string
-            print(title)
+            job = extract_job(result)
+            jobs.append(job)
+    return jobs
 
+def get_jobs():
+    last_page = get_last_page()
+    jobs = extract_jobs(last_page)
     return jobs
