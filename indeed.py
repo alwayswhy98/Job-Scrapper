@@ -30,6 +30,10 @@ def extract_indeed_jobs(last_page):
 
     for page in range(last_page):
         result = requests.get(f"{URL}&start={page*LIMIT}")
-        print(result.status_code)
+        soup = BeautifulSoup(result.text, 'html.parser')
+        results = soup.find_all("div", {"class":"cardOutline"})
+        for result in results:
+            title = result.find("h2", {"class":"jobTitle"}).find("span", title=True).string
+            print(title)
 
     return jobs
