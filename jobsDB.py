@@ -2,10 +2,8 @@ from matplotlib.backend_bases import LocationEvent
 import requests
 from bs4 import BeautifulSoup
 
-URL = f"https://hk.jobsdb.com/hk/search-jobs/quant/1"
-
-def get_last_page():
-    result = requests.get(URL)
+def get_last_page(url):
+    result = requests.get(url)
     soup = BeautifulSoup(result.text, 'html.parser')
 
     search_result_bar = soup.find("div", {"data-automation":"searchResultBar"})
@@ -17,7 +15,11 @@ def get_last_page():
 
 def extract_job(html):
     title = html.find("h1", {"class":"sx2jih0 zcydq84u _18qlyvc0 _18qlyvc1x _18qlyvc3 _18qlyvca"}).string
-    company = html.find("span", {"class":"sx2jih0 zcydq84u _18qlyvc0 _18qlyvc1x _18qlyvc1 _18qlyvca"}).string
+
+    if html.find("span", {"class":"sx2jih0 zcydq84u _18qlyvc0 _18qlyvc1x _18qlyvc1 _18qlyvca"}):
+        company = html.find("span", {"class":"sx2jih0 zcydq84u _18qlyvc0 _18qlyvc1x _18qlyvc1 _18qlyvca"}).string
+    else:
+        company = "None"
 
     if html.find("span", {"class":"sx2jih0 zcydq84u zcydq80 iwjz4h0"}):
         location = html.find("span", {"class":"sx2jih0 zcydq84u zcydq80 iwjz4h0"}).string
@@ -27,11 +29,11 @@ def extract_job(html):
 
     return {"title":title, "company":company, "location":location, "link":link}
 
-def extract_jobs(last_page):
+def extract_jobs(last_page, word):
     jobs = []
     for page in range(1, last_page+1):
         print(f"Scrapping jobsDB page {page}")
-        result = requests.get("https://hk.jobsdb.com/hk/search-jobs/quant/{page}".format(page=page))
+        result = requests.get(f"https://hk.jobsdb.com/hk/search-jobs/{word}/{page}")
         soup = BeautifulSoup(result.text, 'html.parser')
         results = soup.find_all("div", {"class":"sx2jih0 zcydq876 zcydq866 zcydq896 zcydq886 zcydq8n zcydq856 zcydq8f6 zcydq8eu"})
 
@@ -40,7 +42,9 @@ def extract_jobs(last_page):
             jobs.append(job)
     return jobs
 
-def get_jobs():
-    last_page = get_last_page()
-    jobs = extract_jobs(last_page)
+def get_jobs(word):
+    url = f"https://hk.jobsdb.com/hk/search-jobs/{word}/1"
+
+    last_page = get_last_page(url)
+    jobs = extract_jobs(last_page, word)
     return jobs
