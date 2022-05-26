@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 
 app = Flask("SuperScrapper")
 
@@ -9,7 +9,10 @@ def home():
 @app.route("/report")
 def report():
     word = request.args.get('word')
-    word = word.lower()
-    return render_template("report.html", searchingBy = word, potato = "sexy")
+    if word:
+        word = word.lower()
+        return render_template("report.html", searchingBy = word)
+    else:
+        return redirect("/")
 
 app.run(host="0.0.0.0")
